@@ -1,0 +1,37 @@
+---
+   - name: Register master IP
+     set_fact: mysql_replication_master="{{ansible_default_ipv4.address}}"
+     register: mysql_replication_master
+
+   #- name: MYSQL_VARIABLES | Get MySQL vendor
+   #  become: true
+   #  mysql_variables: login_password= "{{ mariadb_root_password }}" variable=version
+   #  register: vc1
+   #  tags: mariadb_version
+
+   #- name: SET_FACT | Server can use GTID
+   #  become: true
+   #  set_fact: mysql_gtid=true
+   #  when: >
+   #    ( mysql_vendor == 'mariadb' and vc1.msg | version_compare('10.1.22', 'ge') )
+   #  tags: mariadb_gitd
+
+   - name: Deploy master configuration
+     become: true
+     template: >
+       src=master.cnf.j2
+       dest=/etc/my.cnf.d/server.cnf
+     notify: restart mysql
+
+   - name: Ensure replication user exists on master.
+     become: true   
+     mysql_user:
+       login_password: "{{ mariadb_root_password }}"
+       name: "{{ mysql_replication_user.name }}"
+       host: "{{ mysql_replication_user.host | default('%') }}"
+       password: "{{ mysql_replication_user.password }}"
+       priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+       state: present
+     tags: replication_user
+
+

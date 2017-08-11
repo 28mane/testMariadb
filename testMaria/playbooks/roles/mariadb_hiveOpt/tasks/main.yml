@@ -1,0 +1,23 @@
+---
+   - name: Create the hive database
+     become: true
+     mysql_db:
+      name: hive
+      state: present
+      login_password: "{{ mariadb_root_password }}"
+
+   - name: Create the hive user and setting privileges
+     become: true
+     mysql_user:
+       login_password: "{{ mariadb_root_password }}"
+       name: hive
+       password: hive
+       priv: '*.*:ALL,GRANT'
+       host: "{{ item }}"
+       state: present
+     with_items:
+       - "localhost"
+       - "{{ ansible_fqdn }}"
+       - "%"
+
+

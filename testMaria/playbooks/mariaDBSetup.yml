@@ -1,0 +1,30 @@
+---
+- name: "Starting Maria DB setup"
+  hosts: hivedb:rangerdb 
+  roles:
+    - { role: commonOpt, when: "(hivedb is defined and hivedb|length > 0) and (rangerdb is defined and rangerdb|length > 0)" } 
+
+- name: "Configuring master Maria Db"
+  hosts: hivedb[0]:rangerdb[0]
+  roles:
+    - { role: masterOpt, when: "(hivedb is defined and hivedb|length > 1) and (rangerdb is defined and rangerdb|length > 1)" }
+
+- name: "Configuring slave Maria Db"
+  hosts: hivedb[1:]:rangerdb[1:]
+  roles:
+    - { role: slaveOpt, when: "(hivedb is defined and hivedb|length > 1) and (rangerdb is defined and rangerdb|length > 1)" }
+
+- name: "Configuring Hive Database"
+  hosts: hivedb[0]
+  roles:
+    - { role: hiveOpt, when: "(hivedb is defined and hivedb|length >= 1) and (rangerdb is defined and rangerdb|length >= 1)" }
+
+- name: "Configuring Ranger Database"
+  hosts: rangerdb[0]
+  roles:
+    - { role: rangerOpt, when: "(hivedb is defined and hivedb|length >= 1) and (rangerdb is defined and rangerdb|length >= 1)" }
+
+#- name: "Configuring Oozie Database"
+#  hosts: masterMariadb
+#  roles:
+#    - oozieOpt

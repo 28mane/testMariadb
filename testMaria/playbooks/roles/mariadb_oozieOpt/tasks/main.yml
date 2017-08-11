@@ -1,0 +1,22 @@
+---
+   - name: Create the oozie database
+     become: true
+     mysql_db:
+      name: oozie
+      state: present
+      login_password: "{{ mariadb_root_password }}"
+
+   - name: Create the oozie user and setting privileges
+     become: true
+     mysql_user:
+       login_password: "{{ mariadb_root_password }}"
+       name: oozie
+       password: oozie
+       priv: '*.*:ALL,GRANT'
+       host: "{{ item }}"
+       state: present
+     with_items:
+       - "localhost"
+       - "{{ ansible_fqdn }}"
+       - "%"
+

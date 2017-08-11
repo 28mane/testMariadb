@@ -1,0 +1,64 @@
+---  
+   - name: server ID
+     become: true
+     debug:
+       msg: "{{ mysql_server_id  }} and  {{ ansible_default_ipv4.address  }}"
+     tags: server_ID
+
+   - name: Install packages
+     become: true
+     package:
+       name: "{{ item }}"
+       state: installed
+     with_items: "{{ mariadb_packages }}"
+     tags: mariadb_packages
+
+   - name: Ensure service is started
+     become: true
+     service:
+       name: "{{ mariadb_service }}"
+       state: started
+       enabled: yes
+     tags: mariadb_service
+
+   - name: Install /etc/my.cnf
+     become: true   
+     template:
+       src: home_my.cnf.j2
+       dest: "{{ mariadb_my_config }}"
+       mode: '0600'
+     notify: restart mysql
+     tags: mariadb_my.cnf
+
+   - name: Update root password
+     become: true
+     mysql_user:
+       #login_user: root 
+       #login_password: "{{ mariadb_root_password }}"
+       name: root
+       host: "{{ item }}"
+       password: "{{ mariadb_root_password }}"
+       state: present
+     with_items:
+       - "{{ ansible_hostname }}"
+       - 127.0.0.1
+       - ::1
+       - localhost
+     ignore_errors: yes
+     tags: mariadb_root_password_update
+
+   - name: Remove all anonymous users
+     become: true
+     mysql_user: name='' host={{ item }} state=absent login_password="{{ mariadb_root_password }}" #login_user=root 
+     with_items:
+       - "{{ ansible_hostname }}"
+       - 127.0.0.1
+       - ::1
+       - localhost
+     tags: mariadb_remove_anonymous_users
+
+   - name: Remove the test database
+     become: true   
+     mysql_db: name=test state=absent login_password="{{ mariadb_root_password }}" #login_user=root login_password="{{ mariadb_root_password }}"
+     tags: mariadb_remove_test_database
+
